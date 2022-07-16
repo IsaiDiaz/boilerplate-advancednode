@@ -3,9 +3,10 @@ require('dotenv').config();
 const express = require('express');
 const myDB = require('./connection');
 const session = require('express-session');
-const passport = require('passport');
-const ObjectID = require('mongodb').ObjectID;
 const fccTesting = require('./freeCodeCamp/fcctesting.js');
+const passport = require('passport');
+const routes = require('./routes.js');
+const auth = require('./auth.js');
 
 const app = express();
 
@@ -28,26 +29,12 @@ app.use(passport.session());
 
 myDB(async (client) => {
   const myDataBase = await client.db('database').collection('users');
-  //console.log(myDataBase)
-  app.get("/", (req, res) => {
-    res.render(process.cwd() + '/views/pug/index', 
-    {title: 'Connected to Database', message: 'Please login'});
-  });
-
-  passport.serializeUser((user, done) => {
-    done(null, user._id);
-  });
-  
-  passport.deserializeUser((id, done) => {
-    myDataBase.findOne({_id: new ObjectID(id)}, (err, doc) => {
-      done(null,doc);
-    });
-  });
-
+  routes(app, myDataBase);
+  auth(app, myDataBase);
 }).catch((e) => {
- app.get("/", (req, res) => {
-    res.render(process.cwd() + '/views/pug/index', 
-    {title: e, message: 'Unable to login'});
+  app.get("/", (req, res) => {
+    res.render(process.cwd() + '/views/pug/index',
+      { title: e, message: 'Unable to login' });
   });
 });
 
